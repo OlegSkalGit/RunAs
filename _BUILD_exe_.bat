@@ -62,7 +62,7 @@ echo ========================================================
 echo.
 
 REM 3. Compile with PyInstaller using the spec file
-".venv\Scripts\python.exe" -m PyInstaller --upx-dir="upx-win64" --noconsole --onefile --name RunAsTool main.py
+".venv\Scripts\python.exe" -m PyInstaller --upx-dir="upx-win64" RunAsTool.spec
 
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -83,7 +83,6 @@ copy /y "README.md" "dist\" >nul
 echo.
 echo Cleaning temporary build files...
 if exist "build" rd /s /q "build"
-if exist "RunAsTool.spec" del /f /q "RunAsTool.spec"
 echo Cleanup complete.
 echo.
 pause
