@@ -31,13 +31,14 @@ class ProgressWindow(tk.Tk):
         password = self.config_data.get('password')
         domain = self.config_data.get('domain')
         commands = self.config_data.get('commands', [])
+        wait_for_completion = self.config_data.get('wait_for_completion', True)
         
         results = []
         for i, cmd in enumerate(commands):
             # update UI in the main thread safely
             self.after(0, self.update_progress, i, f"Виконання: {cmd}")
             
-            res = run_commands_as_user(user, password, domain, [cmd])
+            res = run_commands_as_user(user, password, domain, [cmd], wait_for_completion)
             results.extend(res)
             
             self.after(0, self.update_progress, i + 1, f"Завершено: {cmd}")

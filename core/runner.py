@@ -41,7 +41,7 @@ class PROCESS_INFORMATION(ctypes.Structure):
         ("dwThreadId", ctypes.wintypes.DWORD),
     ]
 
-def run_commands_as_user(username, password, domain, commands):
+def run_commands_as_user(username, password, domain, commands, wait_for_completion=True):
     if not domain:
         domain = "."
     results = []
@@ -51,12 +51,12 @@ def run_commands_as_user(username, password, domain, commands):
             continue
             
         try:
-            command_line = f'cmd.exe /c "{cmd}"'
+            command_line = cmd
             
             si = STARTUPINFO()
             si.cb = ctypes.sizeof(STARTUPINFO)
             si.dwFlags = STARTF_USESHOWWINDOW
-            si.wShowWindow = SW_HIDE
+            si.wShowWindow = 5  # SW_SHOW
             
             pi = PROCESS_INFORMATION()
             
@@ -68,7 +68,7 @@ def run_commands_as_user(username, password, domain, commands):
                 ctypes.c_wchar_p(password),
                 LOGON_WITH_PROFILE,
                 None,
-                ctypes.c_wchar_p(command_line),
+                ctypes.create_unicode_buffer(command_line),
                 creation_flags,
                 None,
                 ctypes.c_wchar_p(os.getcwd()),
@@ -77,17 +77,23 @@ def run_commands_as_user(username, password, domain, commands):
             )
             
             if res:
-                kernel32.WaitForSingleObject(pi.hProcess, 0xFFFFFFFF) # INFINITE
-                exit_code = ctypes.wintypes.DWORD()
-                kernel32.GetExitCodeProcess(pi.hProcess, ctypes.byref(exit_code))
-                
+                if wait_for_completion:
+                    kernel32.WaitForSingleObject(pi.hProcess, 0xFFFFFFFF) # INFINITE
+                    exit_code = ctypes.wintypes.DWORD()
+                    kernel32.GetExitCodeProcess(pi.hProcess, ctypes.byref(exit_code))
+                    status_msg = "Success" if exit_code.value == 0 else f"Failed (exit code {exit_code.value})"
+                    code_val = exit_code.value
+                else:
+                    status_msg = "Success (Launched asynchronously)"
+                    code_val = 0
+                    
                 kernel32.CloseHandle(pi.hProcess)
                 kernel32.CloseHandle(pi.hThread)
                 
                 results.append({
                     "command": cmd, 
-                    "status": "Success" if exit_code.value == 0 else f"Failed (exit code {exit_code.value})", 
-                    "exit_code": exit_code.value
+                    "status": status_msg, 
+                    "exit_code": code_val
                 })
             else:
                 err = kernel32.GetLastError()

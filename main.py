@@ -15,6 +15,8 @@ def main():
         
         # Ask user for the decryption password
         enc_password = simpledialog.askstring("Дешифрування", "Введіть пароль для розшифрування файлу:", show='*')
+        root.destroy() # Destroy hidden root so ProgressWindow can initialize a new Tk properly
+        
         if not enc_password:
             # User canceled or entered empty password
             sys.exit(0)
